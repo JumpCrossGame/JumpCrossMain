@@ -22,20 +22,41 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @author 0xmmq
 /// @notice This contract is used to play JumpCross game.
 contract JumpCrossV1 is Ownable, ReentrancyGuard {
-    mapping(address => uint256) rewards;
+    mapping(address => uint256) public rewards;
     IERC20 public jcc; // JumpCross Gaming coupon
 
-    event Build(string indexed paymentId, address indexed from, string indexed level, uint256 amount);
-    event Create(string indexed paymentId, address indexed from, string indexed mapId, uint8 mode, uint256 amount);
-    event Ready(string indexed paymentId, address indexed from, string indexed mapId, uint256 amount);
-    event Upload(address indexed from, string indexed mapId, uint256 spent);
-    event Settle(string indexed mapId, address[] indexed winners, uint256[] rewards);
+    event Build(
+        string indexed paymentId, 
+        address indexed from, 
+        string indexed level, 
+        uint256 amount, 
+        uint256 includeFee
+    );
+    event Create(
+        string indexed paymentId, 
+        address indexed from, 
+        string indexed mapId, 
+        uint8 mode, 
+        uint256 amount, 
+        uint256 includeFee
+    );
+    event Ready(
+        string indexed paymentId, 
+        address indexed from, 
+        string indexed mapId, 
+        uint256 amount, 
+        uint256 includeFee
+    );
+    event Upload(address indexed player, string indexed mapId, uint256 spent);
+    event Settle(string indexed mapId, address indexed Builder, uint256 revenue);
+    event Share(string indexed mapId, uint256 revenue);
+    event Distribute(string indexed mapId, address indexed winner, uint256 distribution);
 
     error InvalidProtocolFee();
     error InvalidParam();
 
-    constructor() Ownable(_msgSender()) ReentrancyGuard() {
-        jcc = IERC20(0xD59BE5afE8cF939BfFBC1Cb3D2c5545eBD8A7917);
+    constructor(address _jcc) Ownable(_msgSender()) ReentrancyGuard() {
+        jcc = IERC20(_jcc);
     }
 
     /// @notice This function called when user builds a map, leaving a relevant record for game settlement.
@@ -48,7 +69,7 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
         address from = _msgSender();
         _pay(from, amount, includeFee);
 
-        emit Build(paymentId, from, level, amount);
+        emit Build(paymentId, from, level, amount, includeFee);
     }
 
     /// @notice This function called when user creates a map, leaving a relevant record for game settlement.
@@ -69,7 +90,7 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
         address from = _msgSender();
         _pay(from, amount, includeFee);
 
-        emit Create(paymentId, from, mapId, mode, amount);
+        emit Create(paymentId, from, mapId, mode, amount, includeFee);
     }
 
     /// @notice This function called when user is ready at a map, leaving a relevant record for game settlement.
@@ -82,40 +103,52 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
         address from = _msgSender();
         _pay(from, amount, includeFee);
 
-        emit Ready(paymentId, from, mapId, amount);
+        emit Ready(paymentId, from, mapId, amount, includeFee);
     }
 
     /// @notice This function called when user is ready at a map, leaving a relevant record for game settlement.
     /// @dev Records playing data related to the map, used for distribute reward.
     /// @param mapId A map attribute used to search the map.
     /// @param useTime The time user spend playing the map. If user don't complete the game, useTime will be MaxUint256.
-    function upload(string memory mapId, uint256 useTime) external onlyOwner {
-        emit Upload(_msgSender(), mapId, useTime);
+    function upload(address player, string memory mapId, uint256 useTime) external onlyOwner {
+        emit Upload(player, mapId, useTime);
     }
 
     /// @notice This function will be called at the end of a game period to distribute rewards to the specified players.
     /// @dev The rewards assigned to each winner will be recorded, and each player must call claim() to claim their own
     /// rewards. Ex: rewards[winners[0]] += distribution[0]
     /// @param mapId A map attribute used to search the map.
+    /// @param mapBuilder The map builder address.
+    /// @param builderReward The reward for the map builder.
+    /// @param protocolRevenue The revenue for the protocol, will be used to game operation.
     /// @param winners A map attribute used to search the map.
-    /// @param distribution The time user spend playing the map. If user don't complete the game, useTime will be
+    /// @param distributions The time user spend playing the map. If user don't complete the game, useTime will be
     /// MaxUint256.
     function settle(
         string memory mapId,
+        address mapBuilder,
+        uint256 builderReward,
+        uint256 protocolRevenue,
         address[] calldata winners,
-        uint256[] calldata distribution
+        uint256[] calldata distributions
     ) external onlyOwner {
-        if (winners.length != distribution.length) {
+        if (winners.length != distributions.length) {
             revert InvalidParam();
         }
 
+        rewards[mapBuilder] += builderReward;
+        emit Settle(mapId, mapBuilder, builderReward);
+
+        address owner = owner();
+        rewards[owner] += protocolRevenue;
+        emit Share(mapId, protocolRevenue);
+
         for (uint256 i = 0; i < winners.length; i++) {
             address winner = winners[i];
-            uint256 reward = distribution[i];
+            uint256 reward = distributions[i];
             rewards[winner] += reward;
+            emit Distribute(mapId, winner, reward);
         }
-
-        emit Settle(mapId, winners, distribution);
     }
 
     /// @notice users can call this function to claim their rewards if they have rewards.
@@ -133,6 +166,7 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
         }
 
         jcc.transferFrom(from, address(this), amount);
-        rewards[address(this)] += includeFee;
+        address owner = owner();
+        rewards[owner] += includeFee;
     }
 }
