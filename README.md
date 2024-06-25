@@ -1,13 +1,5 @@
-# Sample Hardhat Project
+# JumpCrossV1
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+This contract is the main logic version 1 for the JumpCross game.
 
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.ts
-```
+[Contract (Sepolia): 0xe139C027984Ac661DF0B27c66F067737ec4757F2](https://sepolia.etherscan.io/address/0xe139C027984Ac661DF0B27c66F067737ec4757F2#code)
