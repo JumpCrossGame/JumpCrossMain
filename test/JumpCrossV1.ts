@@ -40,7 +40,7 @@ describe("JumpCrossV1", function () {
 
       await expect(jcv1.buildMap("mockPaymentId", "sliver", BigInt(900), BigInt(300)))
         .to.emit(jcv1, "Build")
-        .withArgs("mockPaymentId", owner.address, "sliver", BigInt(900), BigInt(300));
+        .withArgs(owner.address, "sliver", "mockPaymentId", BigInt(900), BigInt(300));
     });
 
     it("Create space successfully", async function () {
@@ -51,7 +51,7 @@ describe("JumpCrossV1", function () {
 
       await expect(jcv1.createSpace("mockPaymentId", "mockMapId", BigInt(0), BigInt(240), BigInt(40)))
         .to.emit(jcv1, "Create")
-        .withArgs("mockPaymentId", owner.address, "mockMapId", BigInt(0), BigInt(240), BigInt(40));
+        .withArgs(owner.address, "mockMapId", "mockPaymentId", BigInt(0), BigInt(240), BigInt(40));
     });
 
     it("Ready at a space successfully", async function () {
@@ -62,7 +62,7 @@ describe("JumpCrossV1", function () {
 
       await expect(jcv1.readyAt("mockPaymentId", "mockMapId", BigInt(240), BigInt(40)))
         .to.emit(jcv1, "Ready")
-        .withArgs("mockPaymentId", owner.address, "mockMapId", BigInt(240), BigInt(40));
+        .withArgs(owner.address, "mockMapId", "mockPaymentId", BigInt(240), BigInt(40));
     });
 
     it("Upload a game result successfully", async function () {
@@ -120,12 +120,12 @@ describe("JumpCrossV1", function () {
           jcv1.connect(accounts[0]).createSpace("mockPaymentId", "mockMapId", BigInt(0), BigInt(360), BigInt(60))
         )
           .to.emit(jcv1, "Create")
-          .withArgs("mockPaymentId", accounts[0].address, "mockMapId", BigInt(0), BigInt(360), BigInt(60));
+          .withArgs(accounts[0].address, "mockMapId", "mockPaymentId", BigInt(0), BigInt(360), BigInt(60));
 
         for (let i = 1; i < accounts.length; i++) {
           await expect(jcv1.connect(accounts[i]).readyAt("mockPaymentId", "mockMapId", BigInt(360), BigInt(60)))
             .to.emit(jcv1, "Ready")
-            .withArgs("mockPaymentId", accounts[i].address, "mockMapId", BigInt(360), BigInt(60));
+            .withArgs(accounts[i].address, "mockMapId", "mockPaymentId", BigInt(360), BigInt(60));
         }
       }
 
@@ -167,7 +167,7 @@ describe("JumpCrossV1", function () {
       // build
       await expect(jcv1.connect(owner).buildMap("mockPaymentId", "gold", BigInt(1300), BigInt(400)))
         .to.emit(jcv1, "Build")
-        .withArgs("mockPaymentId", owner.address, "gold", BigInt(1300), BigInt(400));
+        .withArgs(owner.address, "gold", "mockPaymentId", BigInt(1300), BigInt(400));
 
       // create & ready
       await playOnce([acc1, acc2, acc3, acc4]);

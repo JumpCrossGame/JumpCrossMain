@@ -26,24 +26,24 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
     IERC20 public jcc; // JumpCross Gaming coupon
 
     event Build(
-        string indexed paymentId, 
         address indexed from, 
-        string indexed level, 
+        string indexed level,
+        string paymentId, 
         uint256 amount, 
         uint256 includeFee
     );
     event Create(
-        string indexed paymentId, 
         address indexed from, 
         string indexed mapId, 
+        string paymentId, 
         uint8 mode, 
         uint256 amount, 
         uint256 includeFee
     );
     event Ready(
-        string indexed paymentId, 
         address indexed from, 
         string indexed mapId, 
+        string paymentId,
         uint256 amount, 
         uint256 includeFee
     );
@@ -69,7 +69,7 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
         address from = _msgSender();
         _pay(from, amount, includeFee);
 
-        emit Build(paymentId, from, level, amount, includeFee);
+        emit Build(from, level, paymentId, amount, includeFee);
     }
 
     /// @notice This function called when user creates a map, leaving a relevant record for game settlement.
@@ -90,7 +90,7 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
         address from = _msgSender();
         _pay(from, amount, includeFee);
 
-        emit Create(paymentId, from, mapId, mode, amount, includeFee);
+        emit Create(from, mapId, paymentId, mode, amount, includeFee);
     }
 
     /// @notice This function called when user is ready at a map, leaving a relevant record for game settlement.
@@ -103,7 +103,7 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
         address from = _msgSender();
         _pay(from, amount, includeFee);
 
-        emit Ready(paymentId, from, mapId, amount, includeFee);
+        emit Ready(from, mapId, paymentId, amount, includeFee);
     }
 
     /// @notice This function called when user is ready at a map, leaving a relevant record for game settlement.
