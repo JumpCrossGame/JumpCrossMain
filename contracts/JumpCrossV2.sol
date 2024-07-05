@@ -7,22 +7,23 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  *    ___                       _____
- *   |_  |                     /  __ \
+ *   |_  |                     /  __ \                  
  *     | |_   _ _ __ ___  _ __ | /  \/_ __ ___  ___ ___
  *     | | | | | '_ ` _ \| '_ \| |   | '__/ _ \/ __/ __|
  * /\__/ | |_| | | | | | | |_) | \__/| | | (_) \__ \__ \
  * \____/ \__,_|_| |_| |_| .__/ \____|_|  \___/|___|___/
  *                       | |
- *                       |_|
+ *                       |_|                          
  *
- * Main contract for JumpCross game.
+ * Main contract for JumpCross game. (v2)
  */
 
-/// @title JumpCrossV1
+/// @title JumpCrossV2
 /// @author 0xmmq
 /// @notice This contract is used to play JumpCross game.
-contract JumpCrossV1 is Ownable, ReentrancyGuard {
+contract JumpCrossV2 is Ownable, ReentrancyGuard {
     mapping(address => uint256) public rewards;
+    address public agent; // For excuting game functions
     IERC20 public jcc; // JumpCross Gaming coupon
 
     event Build(
@@ -54,9 +55,18 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
 
     error InvalidProtocolFee();
     error InvalidParam();
+    error InvalidAgent();
 
     constructor(address _jcc) Ownable(_msgSender()) ReentrancyGuard() {
         jcc = IERC20(_jcc);
+        agent = _msgSender();
+    }
+
+    modifier onlyAgent() {
+        if (_msgSender() != agent) {
+            revert InvalidAgent();
+        }
+        _;
     }
 
     /// @notice This function called when user builds a map, leaving a relevant record for game settlement.
@@ -110,7 +120,7 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
     /// @dev Records playing data related to the map, used for distribute reward.
     /// @param mapId A map attribute used to search the map.
     /// @param useTime The time user spend playing the map. If user don't complete the game, useTime will be MaxUint256.
-    function upload(address player, string memory mapId, uint256 useTime) external onlyOwner {
+    function upload(address player, string memory mapId, uint256 useTime) external onlyAgent {
         emit Upload(player, mapId, useTime);
     }
 
@@ -131,7 +141,7 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
         uint256 protocolRevenue,
         address[] calldata winners,
         uint256[] calldata distributions
-    ) external onlyOwner {
+    ) external onlyAgent {
         if (winners.length != distributions.length) {
             revert InvalidParam();
         }
@@ -151,12 +161,21 @@ contract JumpCrossV1 is Ownable, ReentrancyGuard {
         }
     }
 
-    /// @notice users can call this function to claim their rewards if they have rewards.
+    /// @notice Users can call this function to claim their rewards if they have rewards.
     function claim() external nonReentrant {
         address from = _msgSender();
         uint256 reward = rewards[from];
         rewards[from] = 0;
         jcc.transfer(from, reward);
+    }
+
+    /// @dev This function will change the agent and only owner can call it.
+    function changeAgent(address _agent) external onlyOwner {
+        if (_agent == address(0)) {
+            revert InvalidParam();
+        }
+
+        agent = _agent;
     }
 
     /// @dev Helper function to receive game fee and protocol fee.
